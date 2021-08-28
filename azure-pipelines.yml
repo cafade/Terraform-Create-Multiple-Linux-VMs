@@ -1,0 +1,68 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+
+# TODO: set a job name - see: https://github.com/thomast1906/thomasthorntoncloud-examples/blob/master/Azure-Festive-Calendar/pipelines/Run-Terraform.yaml
+# TODO: destroy resources first
+# TODO: add git trigger
+# TODO: echo terraform outputs
+# TODO: make the pool a variable set at execution time(?)
+# TODO: add tests - maybe an ssh connection.
+# TODO: configure an azure storage resource to save the current terraform state
+
+trigger:
+- master
+
+pool:
+  name: Default
+
+variables:
+  - group: variable-group-azure-keyvault
+
+steps:
+- script: echo Test pipeline
+  displayName: 'Run a one-line script'
+
+
+- task: TerraformInstaller@0
+  inputs:
+    terraformVersion: 'latest'
+
+
+- task: TerraformCLI@0
+  displayName: 'terraform init'
+  inputs:
+      command: 'init'
+      backendType: local
+
+- task: TerraformCLI@0
+  displayName: 'terraform plan'
+  inputs:
+      command: plan
+      environmentServiceName: 'DevOpsII'
+      publishPlanResults: 'test_plan'
+      # Pass command line arguments to terraform
+      commandOptions: '-var admin_username=$(admin-username) -var admin_password=$(admin-password)' # Variables as they are set in the pipelines library
+
+- task: TerraformCLI@0
+  displayName: 'terraform apply'
+  inputs:
+      command: apply
+      environmentServiceName: 'DevOpsII'
+      # Pass command line arguments to terraform
+      commandOptions: '-var admin_username=$(admin-username) -var admin_password=$(admin-password)'
+      # indicate az login should be run as part of this command
+      runAzLogin: true
+
+- task: TerraformCLI@0
+  displayName: 'terraform output'
+  inputs:
+      command: output
+
+
+- script: |
+    echo Add other tasks to build, test, and deploy your project.
+    echo See https://aka.ms/yaml
+    printf End of pipeline
+    printf "%s\n" "$(date)"
+  displayName: 'Run a multi-line script'
